@@ -1,0 +1,554 @@
+---
+title: "ISLR Chapter 3 Applied Exercises"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+# Exercise 8
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+library(ISLR)
+# Exercise 8a
+mpg <- Auto$mpg
+horsepower <- Auto$horsepower
+
+lm.fit <- lm(mpg~horsepower, data=Auto)
+summary(lm.fit)
+predict(lm.fit, data.frame(horsepower=c(98)),
+        interval="confidence")
+predict(lm.fit, data.frame(horsepower=c(98)),
+        interval="prediction")
+?predict
+```
+
+## 8ai
+A relationship between predictor and response is likely because the p-value is significant
+
+## 8aii
+The relationship appears to be strong because R^2 is about 0.60,
+so 60% of variance in mpg is explained by horsepower
+
+## 8aiii
+The relationship is negative. As horsepower increases, mpg decreases
+
+## 8aiv
+Confidence: [23.97308, 24.96108]
+Prediction: [14.8094, 34.12476]
+
+```{r}
+# Exercise 8b
+plot(Auto$horsepower, Auto$mpg, xlab="Horsepower", ylab="mpg")
+abline(lm.fit, col=4)
+```
+```{r}
+# Exercise 8c
+plot(lm.fit)
+```
+We see some evidence for non-linearity in the plot for Residuals vs Fitted
+
+
+# Exercise 9
+
+### 9a
+```{r}
+plot(Auto)
+```
+### 9b
+```{r}
+cor(Auto[,-9])
+```
+### 9c
+```{r}
+lm.fit2 <- lm(mpg~.-name, data=Auto)
+summary(lm.fit2)
+```
+### 9ci
+There appears to be a relationship for these predictors: weight, year, and origin. There could be a potential relationship with displacement. For cylinders, horsepower, and acceleration the relationship is more dubious
+
+### 9cii
+Weight, year, and origin all appear to have a significant relationship to the response
+
+### 9civ
+The positive coefficient for year suggests that for every year increment, mpg increases by ~0.75
+
+
+### 9d
+```{r}
+plot(lm.fit2)
+```
+Commentary:
+From the residuals vs fitted, it looks like there is some non-linearity in the data. For the residuals, we see observations 323, 326, and 327 with a high residuals, although they might not necessarily be outliers because there are nearby neighboring points. For leverage, observation 14 appears to be significantly higher than all the other points.
+
+
+### 9e
+```{r}
+interactionFit <- lm(mpg~.-name 
+                         + weight*displacement
+                         + year:origin
+                         + acceleration:displacement, data=Auto)
+summary(interactionFit)
+```
+Commentary:
+displacement:weight, year:origin, and displacement:acceleration are all statistically significant because including them allows us to increase R^2 from ~0.82 to ~0.86
+
+### 9f
+```{r}
+
+print("Baseline w/o transform")
+baselineTransform <- lm(mpg~.-name, data=Auto)
+summary(baselineTransform)
+
+print("Log Transform of weight, year")
+logTransform <- lm(mpg~.-name + log(weight) + log(year), data=Auto)
+summary(logTransform)
+
+print("Sqrt of weight, year")
+sqrtTransform <- lm(mpg~.-name + sqrt(weight) + sqrt(year), data=Auto)
+summary(sqrtTransform)
+
+print("Square of weight, year")
+squareTransform <- lm(mpg~.-name + I(weight^2) + I(year^2), data=Auto)
+summary(squareTransform)
+```
+Since weight and year have some of the most significant p-values in the baseline, I did various transforms on them. All transforms increased R^2 from ~0.82 to ~0.86.
+
+
+# Exercise 10
+
+### 10a
+```{r}
+carseatSalesLM <- lm(Sales ~ Price + Urban + US, data=Carseats)
+summary(carseatSalesLM)
+```
+### 10b
+Interpretations of coefficients:
+For every unit increase in price, sales decreases by ~54 units.
+If the store is in an urban location, sales decreases by ~22 units.
+If the store is in the US, sales increases by ~1200 units.
+
+### 10c
+\[
+  \hat{y} = 13.043469 + -0.054459x_{1} + -0.021916x_{2} + 1.200573x_{3}
+\]
+Where \(\hat{y}\) is predicted sales in thousands of units, \(x_{1}\) is the price per unit, \(x_{2}\) is 1 if the store is in an urban region (0 if otherwise), and \(x_{3}\) is 1 if the store is in the US (0 if otherwise).
+
+### 10d
+We can reject the null hypothesis for Price and USYes because the p-values are significant
+
+### 10e
+```{r}
+carseatSalesLM2 <- lm(Sales ~ Price + US, data=Carseats)
+summary(carseatSalesLM2)
+```
+
+### 10f
+They both have a multiple R^2 of 0.2393 and the 10e model has an adjusted R^2 that is 0.0019 greater than the 10a model. So their fit is very similar and removing the Urban parameter did not negatively impact the model
+
+### 10g
+```{r}
+confint(carseatSalesLM2, level = 0.95)
+```
+
+### 10h
+```{r}
+plot(carseatSalesLM2)
+which.max(hatvalues(carseatSalesLM2))
+```
+outliers/high leverage observations:
+observation 43 has a relatively high leverage. Observations 377, 51, and 69 all have high residuals, but there is not a large distance between these points and their closest neighbors. So 377, 51, and 69 could be considered weak outliers.
+
+
+# Exercise 11
+
+### 11a
+```{r}
+set.seed(1)
+x = rnorm(100)
+y = 2 * x + rnorm(100)
+randModel <- lm(y ~ x + 0)
+summary(randModel)
+```
+Commentary: the p-value for the coefficient is <2e-16, which indicates that we can reject the null hypothesis. The coefficient estimate is 1.9939 which is approximately 2, the factor that x was multiplied by in finding y. The t-value is 18.73 which is far from zero. Standard error is 0.1065
+
+### 11b
+```{r}
+randModel2 <- lm(x ~ y + 0)
+summary(randModel2)
+```
+The coefficient is 0.39111, standard error is 0.02089, t-value is 18.73, p-value is <2e-16. Since the p-value is statistically significant, we can reject the null hypothesis
+
+
+### 11c
+The p-values and t-values for both are the same. The standard error for regression of x onto y is less than that of y onto x. The coefficient of y onto x is very close to 2, x onto y is moderately close to 1/2
+
+
+### 11d
+\[
+\hat{\beta} = ((\sum_{i=1}^n x_{i}y_{i}) / (\sum_{i^\prime=1}^n x_{i^\prime}^2))
+\]
+\[
+t = \frac{\hat{\beta}}{SE(\hat{\beta})}
+= \frac{\hat{\beta}}{\sqrt{\frac{\sum_{i=1}^n (y_{i} - x_{i}\hat{\beta})^2}{(n-1)\sum_{i^\prime=1}^n x_{i^\prime}^2}}}
+\\
+= \frac{(\sum_{i=1}^n x_{i}y_{i}) / (\sum_{i^\prime=1}^n x_{i^\prime}^2)}{\sqrt{\frac{\sum_{i=1}^n (y_{i} - x_{i}((\sum_{i=1}^n x_{i}y_{i}) / (\sum_{i^\prime=1}^n x_{i^\prime}^2)))^2}{(n-1)\sum_{i^\prime=1}^n x_{i^\prime}^2}}}
+\\
+= \frac{(\sum_{i=1}^n x_{i}y_{i}) / (\sum_{i^\prime=1}^n x_{i^\prime}^2)}{\frac{\sqrt{\sum_{i=1}^n (y_{i} - x_{i}((\sum_{i=1}^n x_{i}y_{i}) / (\sum_{i^\prime=1}^n x_{i^\prime}^2)))^2}}{\sqrt{(n-1)\sum_{i^\prime=1}^n x_{i^\prime}^2}}}
+\\
+= \frac{(\sum_{i=1}^n x_{i}y_{i}) / (\sum_{i^\prime=1}^n x_{i^\prime}^2)\sqrt{(n-1)\sum_{i^\prime=1}^n x_{i^\prime}^2}}{\sqrt{\sum_{i=1}^n (y_{i} - x_{i}((\sum_{i^\prime=1}^n x_{i^\prime}y_{i^\prime}) / (\sum_{i^\prime=1}^n x_{i^\prime}^2)))^2}}
+\\
+= \frac{\sqrt{(n-1)}\sqrt{\sum_{i^\prime=1}^n x_{i^\prime}^2}(\sum_{i=1}^n x_{i}y_{i}) / (\sum_{i^\prime=1}^n x_{i^\prime}^2)}{\sqrt{\sum_{i=1}^n (y_{i} - x_{i}((\sum_{i^\prime=1}^n x_{i^\prime}y_{i^\prime}) / (\sum_{i^\prime=1}^n x_{i^\prime}^2)))^2}}
+\\
+= \frac{\sqrt{(n-1)}(\sum_{i=1}^n x_{i}y_{i})}{\sqrt{(\sum_{i^=1}^n x_{i}^2)\sum_{i=1}^n (y_{i} - x_{i}\hat{\beta})^2}}
+\\
+= \frac{\sqrt{(n-1)}(\sum_{i=1}^n x_{i}y_{i})}{\sqrt{(\sum_{i=1}^n x_{i}^2)(\sum_{i^=1}^n y_{i}^2) - (\sum_{i=1}^n x_{i}^2) (\sum_{i=1}^n 2x_{i}y_{i}\hat{\beta}) + (\sum_{i=1}^n x_{i}^2) (\sum_{i=1}^n (x_{i}\hat{\beta})^2) }}
+\\
+= \frac{\sqrt{(n-1)}(\sum_{i=1}^n x_{i}y_{i})}{\sqrt{(\sum_{i=1}^n x_{i}^2)(\sum_{i^=1}^n y_{i}^2) - (\sum_{i=1}^n x_{i}^2) (\sum_{i=1}^n 2x_{i}y_{i}\hat{\beta}) + (\sum_{i=1}^n x_{i}^2) (\sum_{i=1}^n x_{i}^2\hat{\beta^2}) }}
+\\
+= \frac{\sqrt{(n-1)}(\sum_{i=1}^n x_{i}y_{i})}{\sqrt{(\sum_{i=1}^n x_{i}^2)(\sum_{i^=1}^n y_{i}^2) - 2\hat{\beta}(\sum_{i=1}^n x_{i}^2) (\sum_{i=1}^n x_{i}y_{i}) + (\sum_{i=1}^n x_{i}^2) (\sum_{i=1}^n x_{i}^2\hat{\beta^2}) }}
+\\
+= \frac{\sqrt{(n-1)}(\sum_{i=1}^n x_{i}y_{i})}{\sqrt{(\sum_{i=1}^n x_{i}^2)(\sum_{i^=1}^n y_{i}^2) - 2(\sum_{i=1}^n x_{i}y_{i})^2 + (\sum_{i=1}^n x_{i}^2) (\sum_{i=1}^n x_{i}^2\hat{\beta^2}) }}
+\\
+= \frac{\sqrt{(n-1)}(\sum_{i=1}^n x_{i}y_{i})}{\sqrt{(\sum_{i=1}^n x_{i}^2)(\sum_{i^=1}^n y_{i}^2) - 2(\sum_{i=1}^n x_{i}y_{i})^2 + \hat{\beta^2}(\sum_{i=1}^n x_{i}^2) (\sum_{i=1}^n x_{i}^2) }}
+\\
+= \frac{\sqrt{(n-1)}(\sum_{i=1}^n x_{i}y_{i})}{\sqrt{(\sum_{i=1}^n x_{i}^2)(\sum_{i^=1}^n y_{i}^2) - 2(\sum_{i=1}^n x_{i}y_{i})^2 + (\sum_{i=1}^n x_{i}y_{i})^2 }}
+\\
+= \frac{\sqrt{(n-1)}(\sum_{i=1}^n x_{i}y_{i})}{\sqrt{(\sum_{i=1}^n x_{i}^2)(\sum_{i^=1}^n y_{i}^2) - (\sum_{i=1}^n x_{i}y_{i})^2}}
+\]
+
+### 11e
+Since we showed that the t-statistic is equivalent to the equation above (when there is no intercept), we know that switching x and y wouldn't change anything because multiplication is commutative.
+
+### 11f
+```{r}
+yOntoX <- lm(y~x)
+summary(yOntoX)
+xOntoY <- lm(x~y)
+summary(xOntoY)
+```
+We see that the t-value for the coefficient is the same
+
+# Exercise 12
+
+### 12a
+They are equal when \(\sum_{i=1}^n x_{i}^2 = \sum_{i=1}^n y_{i}^2\) holds.
+
+### 12b
+```{r}
+set.seed(1)
+x <- rnorm(100)
+y <- 2 * x + rnorm(100)
+fit1 <- lm(y~x+0)
+fit2 <- lm(x~y+0)
+summary(fit1)
+summary(fit2)
+```
+We see that the coefficients are not the same
+
+### 12c
+```{r}
+set.seed(1)
+x <- rnorm(100)
+y <- x
+fit1 <- lm(y~x+0)
+fit2 <- lm(x~y+0)
+summary(fit1)$coefficients
+summary(fit2)$coefficients
+```
+
+# Exercise 13
+```{r}
+set.seed(1)
+x <- rnorm(100)
+eps <- rnorm(100, 0, 0.25)
+Y <- -1 + 0.5 * x + eps
+plot(x,Y)
+```
+### 13c
+Vector Y is of length 100. \(\beta_0 = -1\) and \(\beta_1 = 0.5\)
+
+### 13d
+There is positive linear relationship between x and y.
+
+### 13e
+```{r}
+ex13e <- lm(Y~x)
+summary(ex13e)
+```
+I observe that p-values for intercept and coefficient are statistically significant. \(\hat{\beta_0}\) and \(\hat{\beta_1}\) are close to \(\beta_0\) and \(\beta_0\)
+
+### 13f
+```{r}
+plot(x, Y)
+abline(ex13e, col=4)
+abline(a = -1, b = 0.5, col = 2)
+legend('topleft', bty = 'n', legend = c('Least Squares', 'Population'),
+       col = c(4, 2), lty = c(1, 1))
+```
+### 13g
+```{r}
+ex13g <- lm(y ~ x + I(x^2))
+summary(ex13g)
+```
+It does not improve the model fit because the p-values are all significantly larger than the prior model
+
+### 13h
+```{r}
+set.seed(1)
+x <- rnorm(100)
+eps <- rnorm(100, 0, 0.125)
+Y <- -1 + 0.5 * x + eps
+ex13h <- lm(Y ~ x)
+summary(ex13h)
+plot(x, Y)
+abline(ex13h, col=4)
+abline(a = -1, b = 0.5, col = 2)
+legend('topleft', bty = 'n', legend = c('Least Squares', 'Population'),
+       col = c(4, 2), lty = c(1, 1))
+```
+Compared to the 13a-f model, the points hug tighter to the true function when the eps variance is reduced. RSE is lower and \(R^2\) is higher. t-values are also larger
+
+### 13i
+```{r}
+set.seed(1)
+x <- rnorm(100)
+eps <- rnorm(100, 0, 0.5)
+Y <- -1 + 0.5 * x + eps
+ex13i <- lm(Y ~ x)
+summary(ex13i)
+plot(x, Y)
+abline(ex13i, col=4)
+abline(a = -1, b = 0.5, col = 2)
+legend('topleft', bty = 'n', legend = c('Least Squares', 'Population'),
+       col = c(4, 2), lty = c(1, 1))
+```
+The points are farther away from the true function, the RSE is higher, R^2 is lower.
+
+### 13j
+Original (13a-f)
+```{r}
+confint(ex13e)
+```
+Less noise (13h)
+```{r}
+confint(ex13h)
+```
+More noise (13i)
+```{r}
+confint(ex13i)
+```
+We see that as noise increases, the size of the confidence interval increases
+
+# Exercise 14
+
+### 14a
+```{r}
+set.seed(1)
+x1 <- runif(100)
+x2 <- 0.5*x1 + rnorm(100) / 10
+y <- 2 + 2*x1 + 0.3*x2 + rnorm(100)
+ex14a <- lm(y ~ x1 + x2)
+summary(ex14a)
+```
+
+Regression coeffs: \(\beta_0 = 2\), \(\beta_1 = 2\), \(\beta_2 = 0.3\)
+
+### 11b
+```{r}
+print(cor(x1, x2))
+plot(x1, x2)
+```
+
+### 14c
+```{r}
+summary(ex14a)
+```
+\(\hat{\beta_0} = 2.13\), \(\hat{\beta_1} = 1.44\), and \(\hat{\beta_2} = 1.01\). We see that the intercept has a significant p-value. 
+We also know that \(\beta_0 = 2\), \(\beta_1 = 2\), \(\beta_2 = 0.3\)
+So \(\hat{\beta_0}\) is close, \(\hat{\beta_1}\) is somewhat close, and \(\hat{\beta_2}\) is less close to the corresponding true value. For \(\beta_1\), we cannot reject the null hypothesis because the p-value is not large enough. For \(\beta_2\), we can consider the null hypothesis because the p-value is relatively large
+
+### 14d
+```{r}
+ex14d <- lm(y ~ x1)
+summary(ex14d)
+```
+The p-value is significant, so we cannot reject the null hypothesis
+
+### 14e
+```{r}
+ex14e <- lm(y ~ x2)
+summary(ex14e)
+```
+We cannot reject the null hypothesis because the p-value is significant
+
+### 14f
+They do not contradict each other because x1 and x2 demonstrate collinearity.
+Since x2 is collinear to x1, including it will not improve the model but could introduce additional error
+
+### 14g
+```{r}
+x1=c(x1, 0.1)
+x2=c(x2, 0.8)
+y=c(y,6)
+
+x1x2model <- lm(y ~ x1 + x2)
+x1model <- lm(y ~ x1)
+x2model <- lm(y ~ x2)
+
+print("~~~~~~~~~~~~~~~~~~~~x1 and x2")
+summary(x1x2model)
+print("~~~~~~~~~~~~~~~~~~~~x1")
+summary(x1model)
+print("~~~~~~~~~~~~~~~~~~~~x2")
+summary(x2model)
+```
+```{r}
+plot(x1x2model)
+```
+For the x1 and x2 model, we see that the new point has high leverage
+```{r}
+plot(x1model)
+```
+For the x1 model, we see that it is an outlier with a relatively high leverage (but still situated close to other points for leverage)
+
+```{r}
+plot(x2model)
+```
+For the x2 model, we see the new point is high leverage
+
+# Exercise 15
+
+### 15a
+```{r}
+library(MASS)
+print("************************************** zn")
+znModel <- lm(Boston$crim ~ Boston$zn)
+summary(znModel)
+
+print("************************************** indus")
+indusModel <- lm(Boston$crim ~ Boston$indus)
+summary(indusModel)
+
+print("************************************** chas")
+chasModel <- lm(Boston$crim ~ Boston$chas)
+summary(chasModel)
+
+print("************************************** nox")
+noxModel <- lm(Boston$crim ~ Boston$nox)
+summary(noxModel)
+
+print("************************************** rm")
+rmModel <- lm(Boston$crim ~ Boston$rm)
+summary(rmModel)
+
+print("************************************** age")
+ageModel <- lm(Boston$crim ~ Boston$age)
+summary(ageModel)
+
+print("************************************** dis")
+disModel <- lm(Boston$crim ~ Boston$dis)
+summary(disModel)
+
+print("************************************** rad")
+radModel <- lm(Boston$crim ~ Boston$rad)
+summary(radModel)
+
+print("************************************** tax")
+taxModel <- lm(Boston$crim ~ Boston$tax)
+summary(taxModel)
+
+print("************************************** ptratio")
+ptratioModel <- lm(Boston$crim ~ Boston$ptratio)
+summary(ptratioModel)
+
+print("************************************** black")
+blackModel <- lm(Boston$crim ~ Boston$black)
+summary(blackModel)
+
+print("************************************** lstat")
+lstatModel <- lm(Boston$crim ~ Boston$lstat)
+summary(lstatModel)
+
+print("************************************** medv")
+medvModel <- lm(Boston$crim ~ Boston$medv)
+summary(medvModel)
+```
+
+```{r}
+plot(Boston$crim, Boston$zn)
+abline(znModel)
+plot(Boston$crim, Boston$indus)
+abline(indusModel)
+plot(Boston$crim, Boston$chas)
+abline(chasModel)
+plot(Boston$crim, Boston$nox)
+abline(noxModel)
+plot(Boston$crim, Boston$rm)
+abline(rmModel)
+plot(Boston$crim, Boston$age)
+abline(ageModel)
+plot(Boston$crim, Boston$dis)
+abline(disModel)
+plot(Boston$crim, Boston$rad)
+abline(radModel)
+plot(Boston$crim, Boston$tax)
+abline(taxModel)
+plot(Boston$crim, Boston$ptratio)
+abline(ptratioModel)
+plot(Boston$crim, Boston$black)
+abline(blackModel)
+plot(Boston$crim, Boston$lstat)
+abline(lstatModel)
+plot(Boston$crim, Boston$medv)
+abline(medvModel)
+```
+There's a statistically significant association in every predictor except proximity to the Charles River (Boston$chas)
+
+### 15b
+```{r}
+fullModel <- lm(crim ~ ., data = Boston)
+summary(fullModel)
+```
+We see that compared to simple models using each predictor separately, now there are fewer statistically significant predictors. We can still accept the null hypothesis for chas, but also for indus, rm, age, tax, ptratio, and lstat. nox is ambiguous. 
+We can reject the null hypothesis for dis, rad, medv, zn, and black
+
+### 15c
+```{r}
+multipleCoefs = summary(fullModel)$coefficients[-1, 1]
+simpleCoefs = c()
+for (i in names(Boston)[-1]) {
+  tempModel <- lm(crim ~ eval(str2lang(i)), data = Boston)
+  simpleCoefs = c(simpleCoefs, coef(tempModel)[2])
+}
+plot(simpleCoefs, multipleCoefs,
+     main = "Simple Regression Coefficients vs Multiple Regression Coefficients")
+```
+### 15d
+```{r}
+for (i in names(Boston)[-1]) {
+  pred = str2lang(i)
+  if (pred == "chas") {
+    next
+  }
+  tempModel <- lm(crim ~ eval(pred) + I(eval(pred)^2) + I(eval(pred)^3), data = Boston)
+  print(c("********************** ", i))
+  print(summary(tempModel)$coefficients[-1,4])
+}
+```
+We can observe statistical significance in the quadratic and cubic term for indus, nox, age, dis, ptratio, medv.
+
+
+
+
+
